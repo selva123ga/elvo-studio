@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Editor Setup | ELVO STUDIO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{box-sizing:border-box;font-family:Inter,Arial,sans-serif}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(circle at top,#2a0044,#000);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.card{
+  width:100%;
+  max-width:460px;
+  background:linear-gradient(180deg,#14001f,#0a0012);
+  padding:32px;
+  border-radius:24px;
+  box-shadow:0 30px 60px rgba(0,0,0,.75);
+}
+
+.logo{
+  text-align:center;
+  font-size:22px;
+  font-weight:700;
+  margin-bottom:6px;
+}
+
+.logo span{color:#a855f7}
+
+.sub{
+  text-align:center;
+  opacity:.75;
+  margin-bottom:24px;
+}
+
+input{
+  width:100%;
+  padding:12px 14px;
+  margin-bottom:14px;
+  border-radius:10px;
+  border:1px solid #333;
+  background:#000;
+  color:#fff;
+}
+
+label{
+  font-size:13px;
+  opacity:.7;
+  margin-bottom:6px;
+  display:block;
+}
+
+.btn{
+  width:100%;
+  padding:12px;
+  border-radius:999px;
+  border:none;
+  font-weight:600;
+  cursor:pointer;
+  background:linear-gradient(135deg,#7c3aed,#9333ea);
+  color:#fff;
+  margin-top:12px;
+}
+
+.drive-btn{
+  display:block;
+  text-align:center;
+  padding:10px;
+  margin-bottom:14px;
+  border-radius:10px;
+  background:#1a1a1a;
+  border:1px dashed #7c3aed;
+  color:#a855f7;
+  text-decoration:none;
+  font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <div class="logo">ELVO <span>STUDIO</span></div>
+  <div class="sub">Complete your editor profile</div>
+
+  <input id="firstName" placeholder="First Name">
+  <input id="phone" placeholder="Phone Number">
+  <input id="email" placeholder="Email" disabled>
+
+  <input id="city" placeholder="City">
+  <input id="state" placeholder="State">
+  <input id="country" placeholder="Country">
+
+  <label>Upload Resume (Google Drive)</label>
+  <a 
+    class="drive-btn"
+    href="PASTE_RESUME_DRIVE_LINK_HERE"
+    target="_blank">
+    Upload Resume to Drive
+  </a>
+
+  <input id="resumeLink" placeholder="Paste Resume Drive Link">
+
+  <button class="btn" onclick="submitSetup()">Submit & Continue</button>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, updateDoc, serverTimestamp }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+onAuthStateChanged(auth, user=>{
+  if(!user) location.href="login.html";
+  email.value = user.email;
+});
+
+window.submitSetup = async ()=>{
+  if(!firstName.value || !phone.value || !resumeLink.value){
+    alert("Please fill all required fields");
+    return;
+  }
+
+  await updateDoc(doc(db,"users",auth.currentUser.uid),{
+    firstName: firstName.value,
+    phone: phone.value,
+    city: city.value,
+    state: state.value,
+    country: country.value,
+    resumeLink: resumeLink.value,
+    mustSetup: false,
+    createdAt: serverTimestamp()
+  });
+
+  alert("Profile completed successfully!");
+  location.href="editor-dashboard.html";
+};
+</script>
+
+</body>
+</html>

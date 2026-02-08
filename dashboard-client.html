@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Client Dashboard | ELVO STUDIO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+* {
+  box-sizing: border-box;
+  font-family: Inter, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #1b0033, #000);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+}
+
+/* MAIN WRAPPER */
+.app {
+  width: 100%;
+  max-width: 1100px; /* laptop width */
+}
+
+/* HEADER */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.logo span {
+  color: #a855f7;
+}
+
+.btn {
+  background: linear-gradient(135deg,#7c3aed,#9333ea);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* CONTENT */
+.section {
+  padding: 30px 20px;
+}
+
+/* GRID FOR LAPTOP */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+}
+
+/* LAPTOP VIEW */
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* CARD */
+.card {
+  background: linear-gradient(180deg,#14001f,#0a0012);
+  border-radius: 20px;
+  padding: 26px;
+  box-shadow: 0 20px 45px rgba(0,0,0,.65);
+}
+
+h3 {
+  margin: 0 0 10px;
+  color: #c084fc;
+}
+
+.sub {
+  font-size: 14px;
+  opacity: .7;
+  margin-bottom: 18px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  opacity: .8;
+  margin-bottom: 6px;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 13px;
+  border-radius: 12px;
+  border: 1px solid #333;
+  background: #000;
+  color: #fff;
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.drive-btn {
+  display: inline-block;
+  margin-top: 8px;
+  text-decoration: none;
+}
+
+.full-btn {
+  width: 100%;
+  margin-top: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="nav">
+    <div class="logo">ELVO <span>STUDIO</span></div>
+    <button class="btn" onclick="logout()">Logout</button>
+  </header>
+
+  <!-- BODY -->
+  <section class="section">
+
+    <div class="grid">
+
+      <!-- CLIENT DETAILS -->
+      <div class="card">
+        <h3>Client Details</h3>
+        <p class="sub">Your registered information</p>
+
+        <p><b>Name:</b> <span id="clientName">Loading...</span></p>
+        <p><b>Email:</b> <span id="clientEmail">Loading...</span></p>
+      </div>
+
+      <!-- PROJECT SUBMIT -->
+      <div class="card">
+        <h3>Assign Project</h3>
+        <p class="sub">Send your project to admin</p>
+
+        <div class="field">
+          <label>Project Title</label>
+          <input id="title" placeholder="Wedding Film / Reel / Promo">
+        </div>
+
+        <div class="field">
+          <label>Description</label>
+          <textarea id="desc" placeholder="Explain style, reference, deadline"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Upload Raw Footage</label>
+          <p class="sub">Upload multiple videos to Google Drive</p>
+
+          <!-- 🔴 ADD CLIENT DRIVE LINK -->
+          <a href="https://drive.google.com/" target="_blank" class="btn drive-btn">
+            Upload Files
+          </a>
+        </div>
+
+        <button class="btn full-btn" onclick="submitProject()">
+          Submit Project
+        </button>
+      </div>
+
+    </div>
+
+  </section>
+</div>
+
+<script type="module">
+  const clientNotifyPanel = document.getElementById("clientNotifyPanel");
+const clientNotifyCount = document.getElementById("clientNotifyCount");
+
+onAuthStateChanged(auth,user=>{
+  if(!user) location.href="login.html";
+
+  onSnapshot(
+    query(
+      collection(db,"notifications"),
+      where("type","==","client"),
+      where("clientId","==",user.uid),
+      orderBy("createdAt","desc")
+    ),
+    snap=>{
+      clientNotifyPanel.innerHTML="";
+      clientNotifyCount.innerText=snap.size;
+
+      snap.forEach(doc=>{
+        const n=doc.data();
+        clientNotifyPanel.innerHTML+=`
+          <div class="notification">
+            <b>${n.projectTitle}</b><br>
+            ${n.message}
+          </div>
+        `;
+      });
+    }
+  );
+});
+
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged, signOut }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  serverTimestamp
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+let uid = "";
+
+// AUTH
+onAuthStateChanged(auth, async user => {
+  if (!user) {
+    location.href = "login.html";
+    return;
+  }
+
+  uid = user.uid;
+
+  const snap = await getDoc(doc(db,"users",uid));
+  if (!snap.exists()) return;
+
+  const d = snap.data();
+  clientName.innerText = d.name || "Client";
+  clientEmail.innerText = d.email;
+});
+
+// SUBMIT PROJECT
+window.submitProject = async () => {
+  const title = document.getElementById("title").value.trim();
+  const desc = document.getElementById("desc").value.trim();
+
+  if (!title || !desc) {
+    alert("Please fill all fields");
+    return;
+  }
+
+  await addDoc(collection(db,"projects"),{
+    clientId: uid,
+    clientName: clientName.innerText,
+    title,
+    description: desc,
+    driveLink: "CLIENT GOOGLE DRIVE LINK",
+    status: "Pending",
+    assignedEditor: "",
+    createdAt: serverTimestamp()
+  });
+
+  alert("✅ Project submitted successfully");
+  title.value = "";
+  desc.value = "";
+};
+
+// LOGOUT
+window.logout = async () => {
+  await signOut(auth);
+  location.href = "login.html";
+};
+</script>
+
+</body>
+</html>

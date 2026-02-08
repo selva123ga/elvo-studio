@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<script type="module">
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, getDoc }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    location.href = "login.html";
+    return;
+  }
+
+  const snap = await getDoc(doc(db, "users", user.uid));
+
+  if (!snap.exists()) {
+    location.href = "login.html";
+    return;
+  }
+
+  const role = snap.data().role;
+
+  if (role === "admin") location.replace("dashboard-admin.html");
+  if (role === "client") location.replace("dashboard-client.html");
+  if (role === "editor") location.replace("dashboard-editor.html");
+});
+</script>
+
+</body>
+</html>

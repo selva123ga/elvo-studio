@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <div class="nav-right">
+    <button class="icon-btn" onclick="toggleNotify()">🔔</button>
+  </div>
+<meta charset="UTF-8">
+<title>Editor Dashboard | ELVO STUDIO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{box-sizing:border-box;font-family:Inter,Arial,sans-serif}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(circle at top,#2a0044,#05000a);
+  color:#fff;
+}
+
+/* HEADER */
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 22px;
+}
+
+.logo{
+  font-size:20px;
+  font-weight:700;
+}
+.logo span{color:#a855f7}
+
+.top-actions{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+/* PROFILE */
+.profile{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+}
+
+.profile img{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid #7c3aed;
+}
+
+.profile small{
+  opacity:.7;
+  font-size:12px;
+}
+
+/* LOGOUT */
+.logout{
+  padding:8px 16px;
+  border-radius:999px;
+  border:none;
+  background:#1a1a1a;
+  color:#fff;
+  cursor:pointer;
+}
+
+/* ONLINE SWITCH */
+.switch{
+  position:relative;
+  width:46px;
+  height:24px;
+}
+.switch input{display:none}
+.slider{
+  position:absolute;
+  inset:0;
+  background:#333;
+  border-radius:999px;
+  transition:.3s;
+}
+.slider:before{
+  content:"";
+  position:absolute;
+  height:18px;
+  width:18px;
+  left:3px;
+  top:3px;
+  background:#fff;
+  border-radius:50%;
+  transition:.3s;
+}
+input:checked + .slider{
+  background:#22c55e;
+}
+input:checked + .slider:before{
+  transform:translateX(22px);
+}
+
+/* CONTENT */
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.card{
+  background:linear-gradient(180deg,#14001f,#0b0014);
+  border-radius:20px;
+  padding:20px;
+  margin-bottom:20px;
+  box-shadow:0 20px 40px rgba(0,0,0,.6);
+}
+
+.card h3{
+  margin:0 0 14px;
+  color:#c084fc;
+}
+
+/* DETAILS */
+.details p{
+  margin:6px 0;
+  opacity:.85;
+}
+
+/* PROJECT */
+input{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #333;
+  background:#000;
+  color:#fff;
+  margin-top:8px;
+}
+
+.btn{
+  margin-top:14px;
+  padding:10px;
+  width:100%;
+  border:none;
+  border-radius:999px;
+  background:linear-gradient(135deg,#7c3aed,#9333ea);
+  color:#fff;
+  cursor:pointer;
+}
+
+@media(max-width:600px){
+  header{flex-direction:column;gap:12px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">ELVO <span>STUDIO</span></div>
+
+  <div class="top-actions">
+
+    <!-- PROFILE -->
+    <div class="profile" onclick="profileInput.click()">
+      <img id="profileImg" src="https://i.imgur.com/8Km9tLL.png">
+      <div>
+        <div id="profileName"></div>
+        <small>Editor</small>
+      </div>
+    </div>
+
+    <input type="file" id="profileInput" hidden accept="image/*">
+
+    <!-- ONLINE -->
+    <label class="switch">
+      <input type="checkbox" id="onlineToggle">
+      <span class="slider"></span>
+    </label>
+
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- EDITOR DETAILS -->
+  <div class="card">
+    <h3>Editor Details</h3>
+    <div class="details">
+      <p><strong>Email:</strong> <span id="email"></span></p>
+      <p><strong>Phone:</strong> <span id="phone"></span></p>
+      <p><strong>Location:</strong> <span id="location"></span></p>
+    </div>
+  </div>
+
+  <!-- PROJECT -->
+  <div class="card">
+    <h3>Assigned Project</h3>
+
+    <p><strong>Raw Footage (Drive)</strong></p>
+    <a id="rawLink" href="https://drive.google.com/drive/folders/1lxfyn4fBCuXANGFYqE3fV-bnFsYOISOx?usp=drive_link" target="_blank" style="color:#a855f7">
+      Open Client Files
+    </a>
+
+    <input id="outputLink" placeholder="Paste edited video Google Drive link">
+
+    <button class="btn" onclick="submitWork()">Submit Edited Video</button>
+  </div>
+
+</div>
+
+<script type="module">
+  <button onclick="completeProject('PROJECT_ID')">
+  Mark Completed
+</button>
+async function completeProject(projectId){
+  const projectRef = doc(db,"projects",projectId);
+
+  // Get project data first
+  const snap = await getDoc(projectRef);
+  const project = snap.data();
+
+  // 1️⃣ Update project status
+  await updateDoc(projectRef,{
+    status:"Completed"
+  });
+
+  // 2️⃣ Send notification to client
+  await addDoc(collection(db,"notifications"),{
+    type:"client",
+    clientId: project.clientId,
+    clientName: project.clientName,
+    projectId: projectId,
+    projectTitle: project.title,
+    message:"Your project has been completed 🎬✅",
+    read:false,
+    createdAt: serverTimestamp()
+  });
+
+  alert("Project completed & client notified");
+}
+
+
+// PROFILE UPLOAD
+profileInput.onchange = async ()=>{
+  const file = profileInput.files[0];
+  if(!file) return;
+
+  const storageRef = ref(storage,`editors/${uid}/profile.jpg`);
+  await uploadBytes(storageRef,file);
+  const url = await getDownloadURL(storageRef);
+
+  await updateDoc(doc(db,"users",uid),{photoURL:url});
+  profileImg.src = url;
+};
+
+// LOAD PROJECT
+async function loadProject(){
+  const q = query(collection(db,"projects"),where("assignedEditor","==",uid));
+  const snap = await getDocs(q);
+  if(snap.empty) return;
+
+  const d = snap.docs[0];
+  projectId = d.id;
+  rawLink.href = d.data().driveLink;
+}
+
+// SUBMIT WORK
+<script type="module">
+import { db } from "./firebase.js";
+import {
+  addDoc,
+  collection,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const uid = localStorage.getItem("uid");
+const clientName = localStorage.getItem("name");
+
+window.submitProject = async () => {
+  const title = document.getElementById("title").value;
+  const desc = document.getElementById("desc").value;
+  const drive = document.getElementById("drive").value;
+
+  if (!title || !desc || !drive) {
+    alert("Fill all fields");
+    return;
+  }
+
+  await addDoc(collection(db,"projects"),{
+    clientId: uid,
+    clientName,
+    title,
+    description: desc,
+    driveLink: drive,
+    status: "Pending",
+    assignedEditorId: "",
+    assignedEditorName: "",
+    createdAt: serverTimestamp()
+  });
+
+  alert("✅ Project submitted to Admin");
+};
+</script>
+
+</body>
+</html>

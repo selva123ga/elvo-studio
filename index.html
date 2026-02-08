@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ELVO STUDIO — Video Editing</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* RESET */
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family: Inter, system-ui;
+  background:#000;
+  color:#fff;
+  overflow-x:hidden;
+}
+
+/* VIDEO BACKGROUND */
+.hero{
+  position:relative;
+  height:100vh;
+  overflow:hidden;
+}
+.hero video{
+  position:absolute;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  filter:brightness(.4);
+}
+.overlay{
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at top,#00000055,#000);
+}
+
+/* HERO CONTENT */
+.hero-content{
+  position:relative;
+  z-index:2;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:40px;
+}
+.logo{
+  font-size:28px;
+  font-weight:900;
+}
+.logo span{color:#7c3aed}
+
+/* GLITCH */
+.glitch{
+  font-size:48px;
+  font-weight:900;
+  position:relative;
+}
+.glitch::before,.glitch::after{
+  content:attr(data-text);
+  position:absolute;
+  left:0;
+}
+.glitch::before{
+  color:#7c3aed;
+  clip-path:polygon(0 0,100% 0,100% 45%,0 45%);
+  animation:glitch 2s infinite;
+}
+.glitch::after{
+  color:#22d3ee;
+  clip-path:polygon(0 55%,100% 55%,100% 100%,0 100%);
+  animation:glitch 1.5s infinite;
+}
+@keyframes glitch{
+  0%{transform:translate(0)}
+  20%{transform:translate(-2px,2px)}
+  40%{transform:translate(2px,-2px)}
+  60%{transform:translate(-1px,1px)}
+  100%{transform:translate(0)}
+}
+
+/* TYPING */
+.typing{
+  font-size:20px;
+  color:#aaa;
+  margin-top:10px;
+}
+
+/* BUTTON */
+.btn{
+  margin-top:30px;
+  display:inline-block;
+  padding:14px 28px;
+  border-radius:999px;
+  background:linear-gradient(135deg,#7c3aed,#9333ea);
+  text-decoration:none;
+  color:#fff;
+  font-weight:700;
+}
+
+/* SECTION */
+section{
+  padding:120px 40px;
+  max-width:1100px;
+  margin:auto;
+}
+h2{
+  font-size:36px;
+  margin-bottom:20px;
+}
+.sub{color:#aaa;margin-bottom:40px}
+
+/* CARDS */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:30px;
+}
+.card{
+  background:linear-gradient(180deg,#111,#080808);
+  padding:30px;
+  border-radius:20px;
+  transition:.4s;
+}
+.card:hover{
+  transform:translateY(-8px);
+}
+
+/* PORTFOLIO */
+.port video{
+  width:100%;
+  border-radius:14px;
+}
+
+/* PROCESS */
+.step{
+  display:flex;
+  gap:20px;
+  margin-bottom:30px;
+}
+.num{
+  font-size:28px;
+  color:#7c3aed;
+  font-weight:900;
+}
+
+/* FOOTER */
+footer{
+  padding:60px 40px;
+  text-align:center;
+  color:#666;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <video autoplay muted loop>
+    <source src="background.mp4" type="video/mp4">
+  </video>
+  <div class="overlay"></div>
+
+  <div class="hero-content">
+    <div class="logo">ELVO<span>STUDIO</span></div>
+
+    <h1 class="glitch" data-text="WE EDIT STORIES">
+      WE EDIT STORIES
+    </h1>
+
+    <div class="typing" id="typing"></div>
+
+    <a href="#services" class="btn">Explore</a>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<section id="services">
+  <h2>What We Do</h2>
+  <p class="sub">Designed for creators & brands</p>
+
+  <div class="grid">
+    <div class="card">🎬 Reels & Shorts Editing</div>
+    <div class="card">📺 YouTube Video Editing</div>
+    <div class="card">🎞 Cinematic Color Grading</div>
+    <div class="card">📢 Ads & Brand Films</div>
+  </div>
+</section>
+
+<!-- PORTFOLIO -->
+<section class="port">
+  <h2>Our Work</h2>
+  <p class="sub">Visuals that convert</p>
+
+  <div class="grid">
+    <video src="sample1.mp4" muted loop autoplay></video>
+    <video src="sample2.mp4" muted loop autoplay></video>
+    <video src="sample3.mp4" muted loop autoplay></video>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section>
+  <h2>How It Works</h2>
+
+  <div class="step">
+    <div class="num">01</div>
+    <p>Client uploads raw footage (Drive link)</p>
+  </div>
+  <div class="step">
+    <div class="num">02</div>
+    <p>Editor crafts cinematic edit</p>
+  </div>
+  <div class="step">
+    <div class="num">03</div>
+    <p>Revisions & final delivery</p>
+  </div>
+
+  <a href="login.html" class="btn">Start Your Project</a>
+</section>
+
+<footer>
+  © 2026 ELVO STUDIO — Crafted for creators
+</footer>
+
+<script>
+/* TYPING EFFECT */
+const words=["Reels","Shorts","Films","Ads"];
+let i=0,j=0,del=false;
+const el=document.getElementById("typing");
+
+setInterval(()=>{
+  el.textContent=words[i].slice(0,j);
+  if(!del && j++===words[i].length+5) del=true;
+  if(del && j--===0){del=false;i=(i+1)%words.length;}
+},120);
+</script>
+
+</body>
+</html>

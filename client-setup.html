@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Client Setup | ELVO STUDIO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+* {
+  box-sizing: border-box;
+  font-family: Inter, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #1a0033, #000);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* CONTAINER */
+.container {
+  width: 100%;
+  max-width: 420px;
+  padding: 30px;
+}
+
+/* LOGO */
+.logo {
+  text-align: center;
+  margin-bottom: 20px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.logo h1 {
+  margin: 0;
+  font-size: 32px;
+  letter-spacing: 1px;
+}
+
+.logo span {
+  color: #a855f7;
+}
+
+/* CARD */
+.card {
+  background: linear-gradient(180deg, #14001f, #0a0012);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 25px 60px rgba(124,58,237,.4);
+  animation: fadeUp .8s ease;
+}
+
+/* INPUTS */
+input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  border: 1px solid #2a003d;
+  background: #0d0018;
+  color: #fff;
+  font-size: 14px;
+}
+
+input::placeholder {
+  color: #aaa;
+}
+
+input[readonly] {
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
+/* BUTTON */
+button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+button:hover {
+  opacity: .92;
+}
+
+/* TEXT */
+.subtext {
+  text-align: center;
+  font-size: 13px;
+  opacity: .7;
+  margin-bottom: 20px;
+}
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- LOGO -->
+  <div class="logo">
+    <h1>ELVO<span>STUDIO</span></h1>
+    <p class="subtext">Client Account Setup</p>
+  </div>
+
+  <!-- CARD -->
+  <div class="card">
+    <input id="name" placeholder="Full Name">
+    <input id="email" placeholder="Email" readonly>
+    <input id="phone" placeholder="Phone Number">
+
+    <input id="password" type="password" placeholder="New Password">
+    <input id="confirm" type="password" placeholder="Confirm Password">
+
+    <input id="city" placeholder="City">
+    <input id="state" placeholder="State">
+    <input id="country" placeholder="Country">
+
+    <button onclick="saveProfile()">Complete Setup</button>
+  </div>
+
+</div>
+
+<!-- FIREBASE SCRIPT -->
+<script type="module">
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged, updatePassword }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, setDoc }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const emailInput = document.getElementById("email");
+
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    location.href = "login.html";
+    return;
+  }
+  // ✅ AUTO-FILL EMAIL (WORKING)
+  emailInput.value = user.email;
+});
+
+window.saveProfile = async () => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  if (password.value !== confirm.value) {
+    alert("Passwords do not match");
+    return;
+  }
+
+  try {
+    // UPDATE PASSWORD
+    await updatePassword(user, password.value);
+
+    // SAVE CLIENT DATA
+    await setDoc(doc(db, "users", user.uid), {
+      name: name.value,
+      email: user.email,
+      phone: phone.value,
+      city: city.value,
+      state: state.value,
+      country: country.value,
+      role: "client",
+      createdAt: Date.now()
+    });
+
+    location.href = "dashboard-client.html";
+
+  } catch (err) {
+    alert(err.message);
+  }
+};
+</script>
+
+</body>
+</html>

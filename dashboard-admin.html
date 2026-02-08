@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard | ELVO STUDIO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:Inter,Arial,sans-serif;
+  background:#0b0b0b;
+  color:#fff;
+}
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 24px;
+  background:#111;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.logo{font-size:22px;font-weight:700}
+.logo span{color:#7c3aed}
+
+.header-right{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.tab-btn{
+  background:#1a1a1a;
+  border:1px solid #333;
+  color:#fff;
+  padding:8px 16px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:600;
+}
+.tab-btn.active{
+  background:linear-gradient(135deg,#7c3aed,#9333ea);
+  border:none;
+}
+
+.notify-btn{
+  position:relative;
+  cursor:pointer;
+  font-size:20px;
+}
+.notify-count{
+  position:absolute;
+  top:-6px;
+  right:-8px;
+  background:#7c3aed;
+  font-size:11px;
+  padding:2px 6px;
+  border-radius:999px;
+}
+
+.logout{
+  background:linear-gradient(135deg,#7c3aed,#9333ea);
+  border:none;
+  color:#fff;
+  padding:8px 16px;
+  border-radius:999px;
+  cursor:pointer;
+}
+
+.section{padding:24px}
+
+.card{
+  background:#121212;
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 10px 25px rgba(0,0,0,.4);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:20px;
+}
+
+select{
+  width:100%;
+  padding:8px;
+  border-radius:8px;
+  border:none;
+  margin-top:10px;
+}
+
+.status{font-size:13px;opacity:.8}
+a{color:#a78bfa;text-decoration:none}
+
+#notificationPanel{
+  display:none;
+  position:fixed;
+  top:70px;
+  right:20px;
+  width:320px;
+  background:#121212;
+  border-radius:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.7);
+  z-index:99;
+}
+.notification{
+  padding:12px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">ELVO<span>STUDIO</span> Admin</div>
+
+  <div class="header-right">
+    <button class="tab-btn active" id="clientTab" onclick="showClients()">Client</button>
+    <button class="tab-btn" id="editorTab" onclick="showEditors()">Editor</button>
+
+    <div class="notify-btn" onclick="toggleNotifications()">🔔
+      <span class="notify-count" id="notifyCount">0</span>
+    </div>
+
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div id="notificationPanel"></div>
+
+<!-- PROJECTS + EDITORS -->
+<section class="section">
+  <div id="clientView">
+    <h2>📂 Client Projects</h2>
+    <div id="projects"></div>
+  </div>
+
+  <div id="editorView" style="display:none">
+    <h2>🎬 Editors</h2>
+    <div id="editors"></div>
+  </div>
+</section>
+
+<!-- ANALYTICS -->
+<section class="section">
+  <h2>📊 Admin Analytics</h2>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Project Status</h3>
+      <canvas id="statusChart"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>Editors Workload</h3>
+      <canvas id="editorChart"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>Monthly Projects</h3>
+      <canvas id="monthChart"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>Earnings Overview</h3>
+      <canvas id="earningChart"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- 🔥 SCRIPT -->
+<script type="module">
+import { auth, db } from "./firebase.js";
+import { signOut, onAuthStateChanged } from
+"https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import {
+  collection, onSnapshot, query, orderBy,
+  updateDoc, doc
+} from
+"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* AUTH */
+onAuthStateChanged(auth,user=>{
+  if(!user) location.href="login.html";
+});
+
+/* TABS */
+window.showClients=()=>{
+  clientView.style.display="block";
+  editorView.style.display="none";
+  clientTab.classList.add("active");
+  editorTab.classList.remove("active");
+};
+
+window.showEditors=()=>{
+  clientView.style.display="none";
+  editorView.style.display="block";
+  editorTab.classList.add("active");
+  clientTab.classList.remove("active");
+};
+
+/* LOGOUT */
+window.logout=async()=>{
+  await signOut(auth);
+  location.href="login.html";
+};
+
+/* PROJECTS */
+let editors=[];
+
+onSnapshot(collection(db,"editors"),snap=>{
+  editors=[];
+  editorsBox.innerHTML="";
+  snap.forEach(d=>{
+    const e=d.data();
+    editors.push({id:d.id,...e});
+    editorsBox.innerHTML+=`
+      <div class="card">
+        <h3>${e.name}</h3>
+        <p class="status">${e.email}<br>Status: ${e.status}</p>
+      </div>`;
+  });
+});
+
+onSnapshot(collection(db,"projects"),snap=>{
+  projects.innerHTML="";
+  let status={Pending:0,Assigned:0,Completed:0};
+  let editorLoad={}, monthly={}, earnings=0;
+
+  snap.forEach(d=>{
+    const p=d.data();
+    status[p.status]=(status[p.status]||0)+1;
+    if(p.assignedEditorName){
+      editorLoad[p.assignedEditorName]=(editorLoad[p.assignedEditorName]||0)+1;
+    }
+    if(p.createdAt){
+      const m=new Date(p.createdAt.seconds*1000).toLocaleString("default",{month:"short"});
+      monthly[m]=(monthly[m]||0)+1;
+    }
+    earnings+=Number(p.amount||0);
+
+   window.updateDriveLink = async (projectId, link) => {
+  await updateDoc(doc(db,"projects",projectId),{
+    driveLink: link
+  });
+  alert("✅ Drive link updated");
+};
+
+
+  drawCharts(status,editorLoad,monthly,earnings);
+});
+
+/* CHARTS */
+let statusChart,editorChart,monthChart,earnChart;
+
+function drawCharts(status,editorLoad,monthly,earnings){
+  statusChart?.destroy();
+  statusChart=new Chart(statusChartEl,{
+    type:"doughnut",
+    data:{labels:Object.keys(status),datasets:[{data:Object.values(status)}]}
+  });
+
+  editorChart?.destroy();
+  editorChart=new Chart(editorChartEl,{
+    type:"bar",
+    data:{labels:Object.keys(editorLoad),datasets:[{data:Object.values(editorLoad)}]}
+  });
+
+  monthChart?.destroy();
+  monthChart=new Chart(monthChartEl,{
+    type:"line",
+    data:{labels:Object.keys(monthly),datasets:[{data:Object.values(monthly)}]}
+  });
+
+  earnChart?.destroy();
+  earnChart=new Chart(earningChartEl,{
+    type:"bar",
+    data:{labels:["Total"],datasets:[{data:[earnings]}]}
+  });
+}
+
+/* NOTIFICATIONS */
+onSnapshot(
+  query(collection(db,"notifications"),orderBy("createdAt","desc")),
+  snap=>{
+    notificationPanel.innerHTML="";
+    notifyCount.innerText=snap.size;
+    snap.forEach(n=>{
+      const d=n.data();
+      notificationPanel.innerHTML+=`
+        <div class="notification">
+          <b>${d.editorName}</b> ${d.response}<br>
+          <small>${d.projectTitle}</small>
+        </div>`;
+    });
+  }
+);
+
+window.toggleNotifications=()=>{
+  notificationPanel.style.display=
+    notificationPanel.style.display==="block"?"none":"block";
+};
+
+/* ELEMENTS */
+const projects=document.getElementById("projects");
+const editorsBox=document.getElementById("editors");
+const statusChartEl=document.getElementById("statusChart");
+const editorChartEl=document.getElementById("editorChart");
+const monthChartEl=document.getElementById("monthChart");
+const earningChartEl=document.getElementById("earningChart");
+</script>
+
+</body>
+</html>
